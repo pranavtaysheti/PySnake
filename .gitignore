@@ -1,0 +1,5 @@
+__pycache__/
+*.code-workspace
+.python-version
+.vscode/
+.mypy_cache/
