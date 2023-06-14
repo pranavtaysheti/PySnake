@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import ClassVar, Optional
@@ -51,13 +50,7 @@ class Block:
         if not self.grid:
             raise Exception("Block not part of any grid")
 
-        correction: Callable[[int, int], int] = (
-            lambda num, den: num % den if num >= den else num
-        )
-
-        self._coordinates = correction(x, self.grid.width), correction(
-            y, self.grid.height
-        )
+        self._coordinates = x % self.grid.width, y % self.grid.height
 
 
 BlockCoordinates = tuple[Block, Coordinates]
@@ -72,7 +65,6 @@ class Grid:
     _build: list[list[Optional[Block]]] = field(init=False, default_factory=list)
     representation_map: ClassVar[dict[Optional[EntityType], str]]
     _deltas: list[Delta] = field(init = False, default_factory=list)
-    _representation: GridRepresentation = field(init = False)
 
     def __post_init__(self):
         for _ in range(self.width):
@@ -80,12 +72,6 @@ class Grid:
             for _ in range(self.height):
                 column.append(None)
             self._build.append(column)
-        
-        self._representation = GridRepresentation(self)
-    
-    def _process_delta(self, delta: Delta):
-        self._deltas.append(delta)
-        self._representation.update(delta)
     
     def _set_cell(self, block: Block):
         x, y = block.coordinates
@@ -93,13 +79,13 @@ class Grid:
             raise CollisionError(existing_block, block)
 
         self._build[x][y] = block
-        self._process_delta((block, block.coordinates))
+        self._deltas.append((block, block.coordinates))
 
     
     def _clear_cell(self, coordinate: Coordinates):
         x, y = coordinate
         self._build[x][y] = None
-        self._process_delta((None, coordinate))
+        self._deltas.append((None, coordinate))
     
     def add_block(self, new_block: Block):
         new_block.grid = self

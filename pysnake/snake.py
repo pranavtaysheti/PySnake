@@ -46,6 +46,9 @@ class SnakeBlock(Block):
 class SnakeGrid(Grid):
     snake_direction: Direction = Direction.RIGHT
     snake: Snake = field(init=False, default_factory=list)
+    _score: int = field(init=False, default= 0)
+    _is_apple_eaten: bool = field(init=False, default=False)
+    _snake_last_pos: Optional[Coordinates] = field(init=False, default= None)
 
     representation_map = {
         None: "X",
@@ -67,6 +70,11 @@ class SnakeGrid(Grid):
                 continue
             else:
                 break
+    
+    def get_apple_eaten(self):
+        result = self._is_apple_eaten
+        self._is_apple_eaten = False
+        return result
 
     def add_snake(self, coordinates: Coordinates) -> None:
         if self.snake:
@@ -78,38 +86,50 @@ class SnakeGrid(Grid):
     def extend_snake(self):
         snake = self.snake
 
-        last_x, last_y = snake[-1].coordinates
-        delta_x, delta_y = delta_map[self.snake_direction]
-        new_coord = last_x + delta_x, last_y + delta_y
+        if new_coordinates := self._snake_last_pos: ...
+        
+        else:
+            last_x, last_y = snake[-1].coordinates
+            delta_x, delta_y = delta_map[self.snake_direction]
+            new_coordinates = last_x + delta_x, last_y + delta_y
 
-        new_block = SnakeBlock(SnakeEntityType.SNAKE, new_coord, len(snake))
+        new_block = SnakeBlock(SnakeEntityType.SNAKE, new_coordinates, len(snake))
         self.add_block(new_block)
         snake.append(new_block)
 
     def move_snake(self):
-        snake = self.snake
-        prev_coordinates: Coordinates = snake[0].coordinates
+        self._snake_last_pos = self.snake[-1].coordinates #TODO
+        prev_coordinates: Coordinates = self.snake[0].coordinates
+        collision = False
 
         delta_x, delta_y = delta_map[self.snake_direction]
-        first_x, first_y = snake[0].coordinates
+        first_x, first_y = self.snake[0].coordinates
         new_coordinates = first_x - delta_x, first_y - delta_y
 
         try:
-            self.move_block(snake[0], new_coordinates)
+            self.move_block(self.snake[0], new_coordinates)
 
         except CollisionError as e:
             if not e.existing.entity_type == SnakeEntityType.APPLE:
                 raise
 
             self.remove_block(e.existing)
-            self.move_block(snake[0], new_coordinates)
-            self.extend_snake()
+            self.move_block(self.snake[0], new_coordinates)
+            collision = True
 
-        for i in range(1, len(snake)):
-            temp = snake[i].coordinates
-            self.move_block(snake[i], prev_coordinates)
+        for i in range(1, len(self.snake)):
+            temp = self.snake[i].coordinates
+            self.move_block(self.snake[i], prev_coordinates)
             prev_coordinates = temp
-
+        
+        if collision:
+            self.extend_snake()
+            self._score += 1
+            self._is_apple_eaten = True
+    
+    @property
+    def score(self):
+        return self._score
 
 if __name__ == "__main__":
     gr = SnakeGrid(10, 12, Direction.DOWN)
