@@ -6,7 +6,7 @@ from math import floor
 
 import pygame as pg
 
-from snake import SnakeGrid, Direction, SnakeEntityType, SnakeBlock
+from pysnake.snake import SnakeGrid, Direction, SnakeEntityType, SnakeBlock
 
 
 class AssetType(Enum):
@@ -152,6 +152,3 @@ def main():
         apple_frames += 1
         snake_steps += snake_speed
         clock.tick(FPS)
-
-if __name__ == "__main__":
-    main()

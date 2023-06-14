@@ -6,7 +6,7 @@ from enum import Enum, auto
 from typing import Optional
 from random import randint
 
-from grid import (
+from pysnake.grid import (
     Block,
     CollisionError,
     Coordinates,
